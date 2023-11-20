@@ -20,6 +20,7 @@ ApplicationWindow {
     minimumWidth: 1024
     minimumHeight: 576
     color: '#ffffff'
+    title: "data collection"
 
     DataVisualization {
         id: dataVisualization
@@ -41,6 +42,7 @@ ApplicationWindow {
         x: 10
         y: 10
         height: 30
+        spacing: 10
         Button {
             width: 70
             height: 30
@@ -55,13 +57,15 @@ ApplicationWindow {
         Button {
             width: 70
             height: 30
-            text: "保存"
+            text: "控制打开"
+            onClicked: text = dataVisualization.pressure_control_switch() ? "控制关闭" : "控制打开"
         }
         Button {
             width: 70
             height: 30
-            text: "控制打开"
+            text: "保存"
         }
+
     }
 
     Rectangle {

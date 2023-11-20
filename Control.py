@@ -1,8 +1,10 @@
 import binascii
 import time
-import serial
+
 import threading
 from queue import Queue
+import serial
+
 from CRC16 import crc16Add
 
 
@@ -174,6 +176,7 @@ class Control:
         print(f'{get_current_time()}: 控制线程启动')
         # 进入循环
         while True:
+            # print(f'{get_current_time()}: 控制线程运行 开关状态:{self.k}')
             # 记录进入时间
             start_time = time.time_ns()
             # 如果开关状态改变
@@ -182,9 +185,9 @@ class Control:
                     for i in range(5):
                         self.pressureControls.set_all_pressure((0,) * 5)
                     self.valveControls.close_all_valves()
-                    print("控制关闭")
+                    print(f'{get_current_time()}: 控制已关闭')
                 else:           # 打开状态
-                    print("控制打开")
+                    print(f'{get_current_time()}: 控制已打开')
                     self.valveControls.open_all_valves()
                 # 改变信号复位
                 self.change = False
@@ -236,8 +239,6 @@ class Control:
                     run_time = (time.time_ns() - start_time) / 1000000  # 在这里计算本次循环耗时
                     print(f'{get_current_time()}: {i}指气压: {p_t[i]:.2f}kPa  采集电压: {nid_queue_t[i]:.2f}V  '
                           f'队列堆积:{self.nid_queue.qsize()}  运行时间: {run_time:.6f}ms')
-
-
 
     def switch(self):
         self.k = not self.k

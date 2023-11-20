@@ -20,15 +20,15 @@ NID_DATA_QUEUE = Queue()
 # 气压数据队列 元素为列表 长度为5
 PRESSURE_DATA_QUEUE = Queue()
 
-"""控制类"""
-# 串口配置
-pre_com_name, pre_com_baud = 'COM4', 38400
-valve_com_name, valve_com_baud = 'COM7', 9600
-CONTROL = Control(pre_com_name, pre_com_baud, valve_com_name, valve_com_baud)
-# 需要打印的手指 0~4
-CONTROL.need_show = [1]
-# 采样电压灵敏度控制 单位v 值越小 执行气压控制的频率越高
-CONTROL.response_threshold = 0.01
+# """控制类"""
+# # 串口配置
+# pre_com_name, pre_com_baud = 'COM4', 38400
+# valve_com_name, valve_com_baud = 'COM7', 9600
+# CONTROL = Control(pre_com_name, pre_com_baud, valve_com_name, valve_com_baud)
+# # 需要打印的手指 0~4
+# CONTROL.need_show = [1]
+# # 采样电压灵敏度控制 单位v 值越小 执行气压控制的频率越高
+# CONTROL.response_threshold = 0.01
 
 
 
@@ -41,8 +41,9 @@ def get_current_time():
 
 class MyoCollection(myo.DeviceListener):
 
-    def __init__(self):
+    def __init__(self, sync_queue: Queue):
         super().__init__()
+        self.sync_queue = sync_queue
 
     def on_connected(self, event):
         print(f"{event.device_name} 已连接")
@@ -53,7 +54,8 @@ class MyoCollection(myo.DeviceListener):
 
     def on_emg(self, event):
         print(f"{get_current_time()}: {event.emg}")
-        EMG_DATA_QUEUE.put(event.emg)
+        # EMG_DATA_QUEUE.put(event.emg)
+        self.sync_queue.put(event.emg)
 
 
 
@@ -61,11 +63,13 @@ class MyoCollection(myo.DeviceListener):
 
 class NidCollection:
 
-    def __init__(self, NUM_CHANNELS=5, RATE=200 / 5, SP=10):
+    def __init__(self,  sync_queue: Queue, controls_queue: Queue, NUM_CHANNELS=5, RATE=200 / 5, SP=10):
         self.NUM_CHANNELS = NUM_CHANNELS
         self.RATE = RATE
         self.SP = SP
         self.status = True
+        self.sync_queue = sync_queue
+        self.controls_queue = controls_queue
 
     def run(self):
 
@@ -81,8 +85,8 @@ class NidCollection:
                     data = task.read(number_of_samples_per_channel=number_of_samples)
                     # 在这里获取最新的电压值 入队
                     new_data = tuple(data[i][-1] for i in range(self.NUM_CHANNELS))
-                    NID_DATA_QUEUE.put(new_data)
-                    CONTROL.nid_queue.put(new_data)
+                    self.sync_queue.put(new_data)
+                    self.controls_queue.put(new_data)
 
                 except Exception as e:
                     print(e)
@@ -106,12 +110,29 @@ class DataVisualization(QObject):
         self._emg_data = [0] * 8
         self._nid_data = [0] * 5
         self._pressure_data = [0] * 5
+
+        self.nid_sync_queue = Queue()
+        self.controls_queue = Queue()
+        self.myo_sync_queue = Queue()
+
+        # 气压控制对象
+        self.pre_com_name = 'COM4'
+        self.pre_com_baud = 38400
+        self.valve_com_name = 'COM7'
+        self.valve_com_baud = 9600
+        self.pressure_control = Control(self.pre_com_name, self.pre_com_baud, self.valve_com_name, self.valve_com_baud)
+        self.pressure_control.need_show = [1]   # 需要打印的手指 0~4
+        self.pressure_control.response_threshold = 0.01  # 采样电压灵敏度控制 单位v 值越小 执行气压控制的频率越高
+
         # nid采集对象
-        self.nid_collection = NidCollection()
+        self.nid_collection = NidCollection(self.nid_sync_queue, self.controls_queue)
+
         # myo采集对象
-        self.myo_collection = MyoCollection()
+        self.myo_collection = MyoCollection(self.myo_sync_queue)
         myo.init(sdk_path=r'myo-sdk-win-0.9.0')
         self.myo_hub = myo.Hub()
+
+
 
     @Slot()
     def nid_start(self):
@@ -133,11 +154,14 @@ class DataVisualization(QObject):
         self.myoStatusChanged.emit(self.myo_hub.running)
         print(f"{self.myo_hub.running=}")
 
-
     @Slot()
     def myo_stop(self):
         self.myo_hub.stop()
         self.myoStatusChanged.emit(self.myo_hub.running)
+
+    @Slot(result=bool)
+    def pressure_control_switch(self):
+        return self.pressure_control.switch()
 
     @Property(bool, notify=nidStatusChanged)
     def nid_status(self):
@@ -146,6 +170,8 @@ class DataVisualization(QObject):
     @Property(bool, notify=myoStatusChanged)
     def myo_status(self):
         return self.myo_hub.running
+
+
 
     #  Angular
 
