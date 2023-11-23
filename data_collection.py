@@ -1,10 +1,11 @@
+import random
 import sys
 import time
 from queue import Queue
 import myo
 import nidaqmx
 import threading
-from PySide6.QtCore import QObject, Slot, Signal, Property
+from PySide6.QtCore import QObject, Slot, Signal, Property, QPointF
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtWidgets import QApplication
 from nidaqmx import constants
@@ -18,7 +19,7 @@ EMG_DATA_QUEUE = Queue()
 # 电压数据队列 元素为列表 长度为5
 NID_DATA_QUEUE = Queue()
 # 气压数据队列 元素为列表 长度为5
-PRESSURE_DATA_QUEUE = Queue()
+# PRESSURE_DATA_QUEUE = Queue()
 
 """控制类"""
 # 串口配置
@@ -99,19 +100,34 @@ class NidCollection:
 class DataVisualization(QObject):
     nidStatusChanged = Signal(bool)
     myoStatusChanged = Signal(bool)
+    emgDataChanged = Signal(list)
+    nidDataChanged = Signal(list)
 
 
     def __init__(self):
         super().__init__()
-        self._emg_data = [0] * 8
-        self._nid_data = [0] * 5
-        self._pressure_data = [0] * 5
+        self._emg_data = [[] for _ in range(8)]
+        self._nid_data = [[] for _ in range(5)]
+        self._max_show_length = 50
         # nid采集对象
         self.nid_collection = NidCollection()
         # myo采集对象
         self.myo_collection = MyoCollection()
         myo.init(sdk_path=r'myo-sdk-win-0.9.0')
         self.myo_hub = myo.Hub()
+
+        # 启动数据采集线程
+        self._thread_sleep_time = 0.02
+        self.get_nid_data_thread = threading.Thread(target=self.get_nid_data)
+        self.get_nid_data_thread.start()
+        self.get_emg_data_thread = threading.Thread(target=self.get_emg_data)
+        self.get_emg_data_thread.start()
+
+
+
+
+
+
 
     @Slot()
     def nid_start(self):
@@ -128,16 +144,19 @@ class DataVisualization(QObject):
     @Slot()
     def myo_start(self):
         print("myo start")
-        myo_thread = threading.Thread(target=self.myo_hub.run, args=(self.myo_collection, 200))
+        myo_thread = threading.Thread(target=self.myo_hub.run, args=(self.myo_collection, 0))
         myo_thread.start()
         self.myoStatusChanged.emit(self.myo_hub.running)
         print(f"{self.myo_hub.running=}")
-
 
     @Slot()
     def myo_stop(self):
         self.myo_hub.stop()
         self.myoStatusChanged.emit(self.myo_hub.running)
+
+    @Slot()
+    def control_switch(self):
+        CONTROL.switch()
 
     @Property(bool, notify=nidStatusChanged)
     def nid_status(self):
@@ -147,7 +166,60 @@ class DataVisualization(QObject):
     def myo_status(self):
         return self.myo_hub.running
 
-    #  Angular
+    @Property(list, notify=nidDataChanged)
+    def nid_data(self):
+        return self._nid_data
+
+    @Property(list, notify=emgDataChanged)
+    def emg_data(self):
+        return self._emg_data
+
+
+    def get_emg_data(self):
+        while True:
+            if not EMG_DATA_QUEUE.empty():
+                new_data = EMG_DATA_QUEUE.get()
+                for i in range(8):
+                    self._emg_data[i].append(new_data[i])
+                    if len(self._emg_data[i]) > self._max_show_length:
+                        self._emg_data[i] = self._emg_data[i][-self._max_show_length:]
+                self.emgDataChanged.emit(self._emg_data)
+            else:
+                self.test_emg_data()
+                time.sleep(self._thread_sleep_time)
+
+    def get_nid_data(self):
+        while True:
+            if not NID_DATA_QUEUE.empty():
+                new_data = NID_DATA_QUEUE.get()
+                for i in range(5):
+                    self._nid_data[i].append(new_data[i])
+                    if len(self._nid_data[i]) > self._max_show_length:
+                        self._nid_data[i] = self._nid_data[i][-self._max_show_length:]
+                self.nidDataChanged.emit(self._nid_data)
+            else:
+                self.test_nid_data()
+                time.sleep(self._thread_sleep_time)
+
+    def test_emg_data(self):
+        # 向队列添加1~10之间的随机浮点数
+        for i in range(8):
+            self._emg_data[i].append(random.uniform(0.5, 9.5))
+            if len(self._emg_data[i]) > self._max_show_length:
+                self._emg_data[i] = self._emg_data[i][-self._max_show_length:]
+            # 打印每个通道的数据
+            # print(f"{i}= {self._emg_data[i]}")
+            self.emgDataChanged.emit(self._emg_data)
+
+    def test_nid_data(self):
+        # 向队列添加1~10之间的随机数
+        for i in range(5):
+            self._nid_data[i].append(random.uniform(0.5, 4.5))
+            if len(self._nid_data[i]) > self._max_show_length:
+                self._nid_data[i] = self._nid_data[i][-self._max_show_length:]
+            # 打印每个通道的数据
+            # print(f"{i}= {self._nid_data[i]}")
+            self.nidDataChanged.emit(self._nid_data)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -155,7 +227,7 @@ if __name__ == '__main__':
     # 注册 DataVisualization 类型
     qmlRegisterType(DataVisualization, 'DataVisualization', 1, 0, 'DataVisualization')
     engine.load('visualization.qml')
-
+    # engine.load('test.qml')
     if not engine.rootObjects():
         sys.exit(-1)
     print(engine.rootObjects())
