@@ -23,15 +23,15 @@ ApplicationWindow {
     color: '#ffffff'
 
     property bool _stop: false
-    onVisibilityChanged: {
-            if (Qt.application.active) {
-                console.log("Window is not minimized");
-                _stop = false
-            } else {
-                console.log("Window is minimized");
-                _stop = true
-            }
-        }
+//    onVisibilityChanged: {
+//            if (Qt.application.active) {
+//                console.log("Window is not minimized");
+//                _stop = false
+//            } else {
+//                console.log("Window is minimized");
+//                _stop = true
+//            }
+//        }
 
     DataVisualization {
         id: dataVisualization
@@ -246,13 +246,6 @@ ApplicationWindow {
         property var miniChartView7_line: miniChartView7_line
         property var miniChartView8_line: miniChartView8_line
 
-        Component.onCompleted: {
-//            console.log('emgView创建完成',lineList.length)
-
-            for (var axis = 0; axis < 8; ++axis){
-
-            }
-        }
         function add(){
             addSineWave(miniChartView1_line, 0, 50, 3, 0.2, 0)
             addSineWave(miniChartView2_line, 0, 50, 3, 0.2, 0)

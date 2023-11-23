@@ -1,3 +1,4 @@
+import csv
 import random
 import sys
 import time
@@ -103,11 +104,12 @@ class DataVisualization(QObject):
     emgDataChanged = Signal(list)
     nidDataChanged = Signal(list)
 
-
     def __init__(self):
         super().__init__()
         self._emg_data = [[] for _ in range(8)]
         self._nid_data = [[] for _ in range(5)]
+        self._emg_data_csv = [[] for _ in range(8)]
+        self._nid_data_csv = [[] for _ in range(5)]
         self._max_show_length = 50
         # nid采集对象
         self.nid_collection = NidCollection()
@@ -117,7 +119,7 @@ class DataVisualization(QObject):
         self.myo_hub = myo.Hub()
 
         # 启动数据采集线程
-        self._thread_sleep_time = 0.02
+        self._thread_sleep_time = 0.015
         self.get_nid_data_thread = threading.Thread(target=self.get_nid_data)
         self.get_nid_data_thread.start()
         self.get_emg_data_thread = threading.Thread(target=self.get_emg_data)
@@ -181,6 +183,7 @@ class DataVisualization(QObject):
                 new_data = EMG_DATA_QUEUE.get()
                 for i in range(8):
                     self._emg_data[i].append(new_data[i])
+                    self._emg_data_csv[i].append(new_data[i])
                     if len(self._emg_data[i]) > self._max_show_length:
                         self._emg_data[i] = self._emg_data[i][-self._max_show_length:]
                 self.emgDataChanged.emit(self._emg_data)
@@ -194,12 +197,20 @@ class DataVisualization(QObject):
                 new_data = NID_DATA_QUEUE.get()
                 for i in range(5):
                     self._nid_data[i].append(new_data[i])
+                    self._nid_data_csv[i].append(new_data[i])
                     if len(self._nid_data[i]) > self._max_show_length:
                         self._nid_data[i] = self._nid_data[i][-self._max_show_length:]
                 self.nidDataChanged.emit(self._nid_data)
             else:
                 self.test_nid_data()
                 time.sleep(self._thread_sleep_time)
+
+    def write_to_csv(self, file_name, data, field_names):
+        with open(file_name, 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(field_names)
+            transposed_data = zip(*data)
+            csv_writer.writerows(transposed_data)
 
     def test_emg_data(self):
         # 向队列添加1~10之间的随机浮点数
@@ -221,16 +232,15 @@ class DataVisualization(QObject):
             # print(f"{i}= {self._nid_data[i]}")
             self.nidDataChanged.emit(self._nid_data)
 
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     engine = QQmlApplicationEngine()
-    # 注册 DataVisualization 类型
     qmlRegisterType(DataVisualization, 'DataVisualization', 1, 0, 'DataVisualization')
-    engine.load('visualization.qml')
+    engine.load('main.qml')
     # engine.load('test.qml')
     if not engine.rootObjects():
         sys.exit(-1)
-    print(engine.rootObjects())
     sys.exit(app.exec())
 
 
