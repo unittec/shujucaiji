@@ -333,7 +333,7 @@ class Control:
         "按键1：单指循环屈伸"
         while key_num == 1 and not self.keyMonitor.get_key_change_flag():
             # 打开第1、2通道的电磁阀 并设置气压
-            self.valveControls.refresh_valves_status([1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0])
+            self.valveControls.refresh_valves_status([1, 1, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((self.passive_pressure_list_1[0], 0, 0, 0, 0))
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
@@ -344,8 +344,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 打开第3、4通道的电磁阀 并设置气压
+            self.valveControls.refresh_valves_status([0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
             self.pressureControls.set_all_pressure((0, self.passive_pressure_list_1[1], 0, 0, 0))
-            self.valveControls.refresh_valves_status([0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -355,8 +355,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 打开第5、6通道的电磁阀 并设置气压
+            self.valveControls.refresh_valves_status([0, 0, 0, 0,   1, 1, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((0, 0, self.passive_pressure_list_1[2], 0, 0))
-            self.valveControls.refresh_valves_status([0, 0, 0, 0,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -366,8 +366,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 打开第7、8通道的电磁阀 并设置气压
+            self.valveControls.refresh_valves_status([0, 0, 0, 0,   0, 0, 1, 1,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((0, 0, 0, self.passive_pressure_list_1[3], 0))
-            self.valveControls.refresh_valves_status([0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -377,8 +377,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 打开第9、10通道的电磁阀 并设置气压
+            self.valveControls.refresh_valves_status([0, 0, 0, 0,   0, 0, 0, 0,   1, 1, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((0, 0, 0, 0, self.passive_pressure_list_1[4]))
-            self.valveControls.refresh_valves_status([0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 0, 0,  0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -390,8 +390,8 @@ class Control:
         "按键2：拇指循环对捏"
         while key_num == 2 and not not self.keyMonitor.get_key_change_flag():
             # 设置1、2通道的气压 打开对应的电磁阀
+            self.valveControls.refresh_valves_status([1, 1, 1, 1,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((self.passive_pressure_list_2[0], self.passive_pressure_list_2[1], 0, 0, 0))
-            self.valveControls.refresh_valves_status([1, 1, 1, 1] + [0, 0, 0, 0] + [0, 0, 0, 0] + [0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():   # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -401,8 +401,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 设置1、3通道的气压 打开对应的电磁阀
+            self.valveControls.refresh_valves_status([1, 1, 0, 0,   1, 1, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((self.passive_pressure_list_2[0], 0, self.passive_pressure_list_2[2], 0, 0))
-            self.valveControls.refresh_valves_status([1, 1, 0, 0] + [1, 1, 0, 0] + [0, 0, 0, 0] + [0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():  # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -412,8 +412,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 设置1、4通道的气压 打开对应的电磁阀
+            self.valveControls.refresh_valves_status([1, 1, 0, 0,   0, 0, 1, 1,   0, 0, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((self.passive_pressure_list_2[0], 0, 0, self.passive_pressure_list_2[3], 0))
-            self.valveControls.refresh_valves_status([1, 1, 0, 0] + [0, 0, 1, 1] + [0, 0, 0, 0] + [0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():  # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -423,8 +423,8 @@ class Control:
             time.sleep(self.passive_delay)
 
             # 设置1、5通道的气压 打开对应的电磁阀
+            self.valveControls.refresh_valves_status([1, 1, 0, 0,   0, 0, 0, 0,   1, 1, 0, 0,   0, 0, 0, 0])
             self.pressureControls.set_all_pressure((self.passive_pressure_list_2[0], 0, 0, 0, self.passive_pressure_list_2[4]))
-            self.valveControls.refresh_valves_status([1, 1, 0, 0] + [0, 0, 0, 0] + [1, 1, 0, 0] + [0, 0, 0, 0])
             if self.keyMonitor.get_key_change_flag():  # 如果按键值改变 则退出循环
                 return
             time.sleep(self.passive_delay)
@@ -455,6 +455,7 @@ class Control:
         "按键5：气压全部置0 关闭所有电磁阀"
         while key_num == 2 and not not self.keyMonitor.get_key_change_flag():
             self.reset_all_pressure()
+            return  # 退出循环
 
     def nid_handle(self):
         """NID卡数据处理函数"""
