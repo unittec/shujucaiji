@@ -140,6 +140,7 @@ class DataVisualization(QObject):
 
         self.nid_state = False
         self.myo_state = False
+        self.start_flag = False
 
     @Slot()
     def nid_start(self):
@@ -178,6 +179,7 @@ class DataVisualization(QObject):
         self.myo_hub.stop()
         self.myoStatusChanged.emit(self.myo_hub.running)
         self.myo_state = False
+        self.start_flag = False
 
     # @Slot()
     # def control_switch(self):
@@ -210,6 +212,7 @@ class DataVisualization(QObject):
             new_data = EMG_DATA_QUEUE.get() # 取当前队列最早数据
             EMG_DATA_QUEUE.task_done()
             # print(f"myo: {get_current_time()}")
+            self.start_flag = True
 
             for i in range(8):
                 self._emg_data_csv[i].append(new_data[i])
@@ -225,6 +228,8 @@ class DataVisualization(QObject):
         # 10ms
         while True:
             new_data = NID_DATA_QUEUE.get()
+            if not self.start_flag:
+                continue
             # print(f"nid: {get_current_time()}")
             # 计算电压值范围
             self._nid_range[0] = self._nid_range[0] if self._nid_range[0] > min(new_data) else min(new_data) - 0.1
@@ -251,11 +256,22 @@ class DataVisualization(QObject):
         field_names = ['nid_1', 'nid_2', 'nid_3', 'nid_4', 'nid_5',
                        'emg_1', 'emg_2', 'emg_3', 'emg_4', 'emg_5', 'emg_6', 'emg_7', 'emg_8']
         # 确保emg和nid数据长度一致，以长度短的为准
+        data = []
+        if self._emg_data_csv[0] > self._nid_data_csv[0]:
+            for i in range(len(self._nid_data_csv[0])):
+                nid_data = [self._nid_data_csv[j][i] for j in range(5)]
+                emg_data = [self._emg_data_csv[j][i] for j in range(8)]
+                data.append(nid_data + emg_data)
+        else:
+            for i in range(len(self._emg_data_csv[0])):
+                nid_data = [self._nid_data_csv[j][i] for j in range(5)]
+                emg_data = [self._emg_data_csv[j][i] for j in range(8)]
+                data.append(nid_data + emg_data)
 
         with open(file_name, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(field_names)
-            # transposed_data = zip(*data)
+            transposed_data = zip(*data)
             csv_writer.writerows(transposed_data)
 
     @Slot()
